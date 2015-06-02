@@ -1,6 +1,15 @@
   /* ARBikeJapan
  Version by Greg Brown, PTC Japan
  May 2015
+ 
+ Hardware:
+ Raspberry Pi B+
+ Arduberry
+ Grove Sensor Shield
+ Grove 10DOF IMU (connected on i2c) 
+ Grove LED Bar (connected on Digital 8,9)
+ Grove IR Relective sensor (x3)  (connected on digital 2,3,4)
+ Grove Ultrasonic Ranger (connected on i2c)
  */
  
   #include <PinChangeInt.h>
@@ -117,7 +126,7 @@
     // Calculate fork extension using Ultrasonic Ranger  
     if (millis() - lastpingmillis >=35) { 
         ultrasonic.MeasureInCentimeters();
-        frontShockDisplacement = ultrasonic.RangeInCentimeters;    
+        frontShockDisplacement = (ultrasonic.RangeInCentimeters*10.0-172.5); //specific to bike    
         lastpingmillis = millis();
         bar.setLevel(2);
     }     
@@ -133,7 +142,12 @@
     Serial.print(pedalsRPM);      Serial.print("  ");   
     Serial.print(forkRotarySensor/1023.0*151.0 - 45.0);  Serial.print("  ");
     Serial.print(suspensionLinkRotarySensor/1023.0*184.25 - 30.07344);  Serial.print("  ");
+    if(frontShockDisplacement >= -7.0) {
+    Serial.print("0.0");   Serial.print("  ");    
+    }
+    else {
     Serial.print(frontShockDisplacement);   Serial.print("  ");
+    }
   
     // read raw accel/gyro measurements from device
     accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
