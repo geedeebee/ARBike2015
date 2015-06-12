@@ -1,6 +1,6 @@
   /* ARBikeJapan
  Version by Greg Brown, PTC Japan
- May 2015
+ June 2015
  
  Hardware:
  Raspberry Pi B+
@@ -8,8 +8,9 @@
  Grove Sensor Shield
  Grove 10DOF IMU (connected on i2c) 
  Grove LED Bar (connected on Digital 8,9)
- Grove IR Relective sensor (x3)  (connected on digital 2,3,4)
- Grove Ultrasonic Ranger (connected on i2c)
+ Grove IR Relective sensors (x3)  (connected on Digital 2,3,4)
+ Grove Ultrasonic Ranger (Digital 7)
+ 10k potentiometer (A0)
  */
  
   #include <PinChangeInt.h>
@@ -29,8 +30,8 @@
   #define FRONTWHEEL     2 
   #define REARWHEEL      3 
   #define PEDALS         4  
-  #define FORK           A0  // TO BE CHANGED TO DIGITAL ENCODER IMPLEMENTAION!
-  #define SUSPENSIONLINK A1
+  #define FORK           A0  
+  #define SUSPENSIONLINK A2 // TO DO!!! NOT USED FOR DMS DEMO
   
   // variables for MPU-9250 9-DOF IMU
   int16_t ax, ay, az;
@@ -81,12 +82,11 @@
   }
   
   
-  // The one-time setup
   void setup() {
     Serial.begin(19200);
     Wire.begin();
     
-    // setup the interrupts for IR sensor on wheels/crank (need reflective paint)
+    // setup the interrupts for IR sensor on wheels/crank
     pinMode(PEDALS, INPUT);
     pinMode(FRONTWHEEL, INPUT);
     pinMode(REARWHEEL, INPUT);
@@ -114,7 +114,7 @@
     
     int frontWheelRPM = computeRPM(lastFrontWheelTick,currentFrontWheelTick,6); //6 ticks per turn
     int rearWheelRPM  = computeRPM(lastRearWheelTick,currentRearWheelTick,6); //6 ticks per turn
-    int pedalsRPM = computeRPM(lastPedalsTick,currentPedalsTick,28); //28 ticks per turn
+    int pedalsRPM = computeRPM(lastPedalsTick,currentPedalsTick,4); //4 ticks per turn
   
     //FORK PING WAS PREVIOUSLY HERE, TRYING IT INSIDE THE "S" LOOP
    
@@ -123,10 +123,10 @@
     
     bar.setLevel(1);  
       
-    // Calculate fork extension using Ultrasonic Ranger  
+    // Calculate fork extension using Ultrasonic range sensor  
     if (millis() - lastpingmillis >=35) { 
         ultrasonic.MeasureInCentimeters();
-        frontShockDisplacement = (ultrasonic.RangeInCentimeters*10.0-172.5); //specific to bike    
+        frontShockDisplacement = (ultrasonic.RangeInCentimeters*10.0-129.0); //specific to bike 172.5 for V10   
         lastpingmillis = millis();
         bar.setLevel(2);
     }     
@@ -140,8 +140,12 @@
     Serial.print(frontWheelRPM);  Serial.print("  ");
     Serial.print(rearWheelRPM);   Serial.print("  ");
     Serial.print(pedalsRPM);      Serial.print("  ");   
-    Serial.print(forkRotarySensor/1023.0*151.0 - 45.0);  Serial.print("  ");
-    Serial.print(suspensionLinkRotarySensor/1023.0*184.25 - 30.07344);  Serial.print("  ");
+    
+    Serial.print(-1.0*map(forkRotarySensor,0,1023,-45,45));  Serial.print("  ");    
+//    NOT USING REAR SUSPENSION SENSOR FOR DMS    
+//    Serial.print(suspensionLinkRotarySensor/1023.0*184.25 - 30.07344);  Serial.print("  ");
+    Serial.print(0.0);  Serial.print("  ");   
+    
     if(frontShockDisplacement >= -7.0) {
     Serial.print("0.0");   Serial.print("  ");    
     }
